@@ -148,7 +148,6 @@ void reconnect() {
   while (!client.connected()) {
     // Attempt to connect
     if (client.connect(mqttClientId, mqttUser, mqttPassword)) {
-      //Serial.println("connected");
       // Once connected, resubscribe
       client.subscribe(mqttStartTopic);
     } else {

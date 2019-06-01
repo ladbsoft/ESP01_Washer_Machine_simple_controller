@@ -1,6 +1,6 @@
 // #==================================================================#
 // ‖ Author: Luis Alejandro Domínguez Bueno (LADBSoft)                ‖
-// ‖ Date: 2019-03-20                                   Version: 0.4a ‖
+// ‖ Date: 2019-03-20                                    Version: 1.0 ‖
 // #==================================================================#
 // ‖ Name: ESP8266 MQTT Washing machine simple controller             ‖
 // ‖ Description: A small sketch for the ESP8266 (ESP-01 to be exact) ‖
@@ -18,6 +18,7 @@
 // #==================================================================#
 // ‖ Version history:                                                 ‖
 // #==================================================================#
+// ‖ 1.0:  Code cleanup. First stable version.                        ‖
 // ‖ 0.4a: Disabled serial communication in order to use GPIO 1 and 3 ‖
 // ‖ instead of 0 and 4, after confronting some issues.               ‖
 // ‖ 0.3a: Basic door lock sense support added.                       ‖
@@ -64,7 +65,7 @@ void setup() {
 
   pinMode(startCyclePin, OUTPUT);   // For washing cycle start
   pinMode(doorLockPin, INPUT);      // For door lock detection
-  //Serial.begin(115200);
+
   setup_wifi();
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
@@ -81,6 +82,7 @@ void loop() {
   client.loop();
 
   long now = millis();
+  //Check status every 5 seconds
   if (now - lastCheck > 5000) {
     lastCheck = now;
 
@@ -90,7 +92,6 @@ void loop() {
         client.publish(mqttStartTopic, "ON");
       }
       
-      //Serial.println("Door: locked");
       client.publish(mqttDoorTopic, "CLOSED");
 
       if (doorUnlockedFor > 0) {
@@ -101,8 +102,10 @@ void loop() {
         doorUnlockedFor++;
       }
 
+      //Door needs to be unlocked for 10 seconds (2 checks). This is
+      //done to avoid misunderstanding power fluctuations as
+      //unlocking signals.
       if (doorUnlockedFor >= 2) {
-        //Serial.println("Door: unlocked");
         client.publish(mqttDoorTopic, "OPEN");
 
         client.publish(mqttStartTopic, "OFF");
@@ -120,21 +123,11 @@ void setup_wifi() {
   delay(10);
 
   // We start by connecting to a WiFi network
-  //Serial.println();
-  //Serial.print("Connecting to ");
-  //Serial.println(ssid);
-
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    //Serial.print(".");
   }
-
-  //Serial.println("");
-  //Serial.println("WiFi connected");
-  //Serial.println("IP address: ");
-  //Serial.println(WiFi.localIP());
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -143,17 +136,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
   memcpy(payloadNull, payload, length);
   payloadNull[length] = '\0';
 
-  //Serial.print("Message arrived [");
-  //Serial.print(topic);
-  //Serial.print("] ");
-  for (int i = 0; i < length; i++) {
-    //Serial.print((char)payload[i]);
-  }
-  //Serial.println();
-
   if(String(topic).equals(String(mqttStartTopic))) {
     if (String((char*)payloadNull).equals("ON")) {
-      //Serial.println("Washing cycle start requested");
       startWashingCycle();
     }
   }
@@ -162,17 +146,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
-    //Serial.print("Attempting MQTT connection...");
-
     // Attempt to connect
     if (client.connect(mqttClientId, mqttUser, mqttPassword)) {
       //Serial.println("connected");
       // Once connected, resubscribe
       client.subscribe(mqttStartTopic);
     } else {
-      //Serial.print("failed, rc=");
-      //Serial.print(client.state());
-      //Serial.println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
       delay(5000);
     }

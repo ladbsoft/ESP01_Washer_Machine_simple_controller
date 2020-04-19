@@ -1,6 +1,6 @@
 // #==================================================================#
 // ‖ Author: Luis Alejandro Domínguez Bueno (LADBSoft)                ‖
-// ‖ Date: 2019-03-20                                    Version: 1.0 ‖
+// ‖ Date: 2019-03-20                                    Version: 1.1 ‖
 // #==================================================================#
 // ‖ Name: ESP8266 MQTT Washing machine simple controller             ‖
 // ‖ Description: A small sketch for the ESP8266 (ESP-01 to be exact) ‖
@@ -18,6 +18,8 @@
 // #==================================================================#
 // ‖ Version history:                                                 ‖
 // #==================================================================#
+// ‖ 1.1:  Added WiFi Manager, to enable new WiFi configuration       ‖
+// ‖ without reprogramming. Minor code cleaning.                      ‖
 // ‖ 1.0:  Code cleanup. First stable version.                        ‖
 // ‖ 0.4a: Disabled serial communication in order to use GPIO 1 and 3 ‖
 // ‖ instead of 0 and 4, after confronting some issues.               ‖
@@ -30,19 +32,13 @@
 // +------------------------------------------------------------------+
 // |                        I N C L U D E S                           |
 // +------------------------------------------------------------------+
-#include <WiFiClient.h>
 #include <ESP8266WiFi.h>
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>
+#include <WiFiClient.h>
 #include <PubSubClient.h>
-#include "Connection.h"
-
-// +------------------------------------------------------------------+
-// |                       C O N S T A N T S                          |
-// +------------------------------------------------------------------+
-const char* mqttClientId   = "GF_WashingMachine";
-const char* mqttDoorTopic  = "Home/GF_Patio/WashingMachine/Door";
-const char* mqttStartTopic = "Home/GF_Patio/WashingMachine/Start";
-const byte  startCyclePin  = 3;
-const byte  doorLockPin    = 1;
+#include "Configuration.h"
 
 // +------------------------------------------------------------------+
 // |                         G L O B A L S                            |
@@ -120,13 +116,13 @@ void loop() {
 // +------------------------------------------------------------------+
 
 void setup_wifi() {
-  delay(10);
+  WiFiManager wifiManager;
+  wifiManager.setTimeout(180); //3 minutes
 
-  // We start by connecting to a WiFi network
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+  if(!wifiManager.autoConnect(wifiSsid, wifiPassword)) {
+    //Retry after 3 minutes with no WiFi connection
+    ESP.reset();
+    delay(5000);
   }
 }
 

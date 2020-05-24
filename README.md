@@ -23,3 +23,5 @@ You'll need:
 
 ### Configuration of the Arduino Sketch
 You'll need to configure in Configuration.h the IP, user, and password of your MQTT server, the client ID, and the two MQTT topics to use and an SSID and password to create a new WiFi connection with a captive portal, that lets you connect to your WiFi router. This is not your actual WiFi router SSID and password, but a new one. Once you power on the microcontroller for the first time, connect to the SSID you configured here with your password and navigate to the captive portal to then configure your real WiFi connection.
+
+More info (only in Spanish for now) in https://elprogramadoriberico.es/2019/04/22/haciendo-inteligente-mi-lavadora-parte-1/
